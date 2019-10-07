@@ -6,6 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "bin": {
+     "create-simple-js-app": "./bin/csja.js"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Joxtacy/create-simple-js-app.git"
