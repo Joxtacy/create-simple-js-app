@@ -1,0 +1,19 @@
+{
+  "name": "create-simple-js-app",
+  "version": "1.0.0",
+  "description": "Creates a simple js app template",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Joxtacy/create-simple-js-app.git"
+  },
+  "author": "Joxtacy",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Joxtacy/create-simple-js-app/issues"
+  },
+  "homepage": "https://github.com/Joxtacy/create-simple-js-app#readme"
+}
