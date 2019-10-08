@@ -17,6 +17,17 @@ module.exports = () => {
             port: 3003,
             hot: true
         },
+        module: {
+            rules: [
+                {
+                    test: /\.js$/,
+                    exclude: /node_modules/,
+                    use: {
+                        loader: "babel-loader"
+                    }
+                }
+            ]
+        },
         plugins: [
             new HtmlWebpackPlugin({
                 template: path.join(__dirname, "src/index.html")
