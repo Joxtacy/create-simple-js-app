@@ -22,8 +22,10 @@ const getDependencies = deps =>
     // exclude the plugin only used in this file, nor relevant to the boilerplate
     .replace(/fs-extra[^\s]+/g, '');
 
-const scripts = `"start": "MODE=development webpack-dev-server",
-    "build": "MODE=production webpack -p",
+const scripts = `"build": "MODE=production webpack",
+    "start": "MODE=development webpack-dev-server",
+    "lint": "eslint --ext .js ./ --ignore-path .eslintignore",
+    "lint:fix": "eslint --ext .js --fix ./",
     "test": "jest --watchAll"`;
 
 const projectName = process.argv[2];
@@ -51,7 +53,7 @@ exec(createDirAndInitNpm, (initErr, initStdout, initStderr) => {
     });
 
     // Copy config files
-    const filesToCopy = ['README.md', 'webpack.config.js', '.eslintrc', '.babelrc'];
+    const filesToCopy = ["README.md", "webpack.config.js", ".eslintrc.js", ".eslintignore", ".babelrc"];
     for (let i = 0; i < filesToCopy.length; i += 1) {
       fs
         .createReadStream(path.join(__dirname, `../${filesToCopy[i]}`))
