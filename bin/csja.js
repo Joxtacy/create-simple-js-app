@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-const path = require('path');
-const fs = require('fs-extra');
-const { exec } = require('child_process');
+const path = require("path");
+const fs = require("fs-extra");
+const { exec } = require("child_process");
 
-const packageJson = require('../package.json');
+const packageJson = require("../package.json");
 
 /**
  * we pass the object key dependency || devdependency to this function
@@ -14,13 +14,13 @@ const packageJson = require('../package.json');
  * every dep the exact version speficied in package.json
  */
 const getDependencies = deps =>
-  Object.entries(deps)
-    .map(dep => `${dep[0]}@${dep[1]}`)
-    .toString()
-    .replace(/,/g, ' ')
-    .replace(/^/g, '')
-    // exclude the plugin only used in this file, nor relevant to the boilerplate
-    .replace(/fs-extra[^\s]+/g, '');
+    Object.entries(deps)
+        .map(dep => `${dep[0]}@${dep[1]}`)
+        .toString()
+        .replace(/,/g, " ")
+        .replace(/^/g, "")
+        // exclude the plugin only used in this file, nor relevant to the boilerplate
+        .replace(/fs-extra[^\s]+/g, "");
 
 const scripts = `"build": "MODE=production webpack",
     "start": "MODE=development webpack-dev-server",
@@ -31,14 +31,16 @@ const scripts = `"build": "MODE=production webpack",
 const projectName = process.argv[2];
 const createDirAndInitNpm = `mkdir ${projectName} && cd ${projectName} && npm init --yes`;
 
-console.log('Initializing project...');
+console.log("Initializing project...");
 
 // create folder and initialize npm
-exec(createDirAndInitNpm, (initErr, initStdout, initStderr) => {
+exec(createDirAndInitNpm, (initErr, initStdout) => {
     if (initErr) {
-      console.error(`Everything was fine, then it wasn't: ${initErr}`);
-      return;
+        console.error(`Everything was fine, then it wasn't: ${initErr}`);
+        return;
     }
+
+    console.log(initStdout);
 
     // Add scripts to package.json
     const packageJsonFile = `${projectName}/package.json`;
@@ -47,7 +49,7 @@ exec(createDirAndInitNpm, (initErr, initStdout, initStderr) => {
 
         console.log(file.toString());
         const data = file.toString()
-            .replace('"test": "echo \\"Error: no test specified\\" && exit 1"', scripts);
+            .replace("\"test\": \"echo \\\"Error: no test specified\\\" && exit 1\"", scripts);
         console.log(data);
         fs.writeFile(packageJsonFile, data, err2 => err2 || true);
     });
@@ -55,27 +57,27 @@ exec(createDirAndInitNpm, (initErr, initStdout, initStderr) => {
     // Copy config files
     const filesToCopy = ["README.md", "webpack.config.js", ".eslintrc.js", ".eslintignore", ".babelrc"];
     for (let i = 0; i < filesToCopy.length; i += 1) {
-      fs
-        .createReadStream(path.join(__dirname, `../${filesToCopy[i]}`))
-        .pipe(fs.createWriteStream(`${process.argv[2]}/${filesToCopy[i]}`));
+        fs.createReadStream(path.join(__dirname, `../${filesToCopy[i]}`))
+            .pipe(fs.createWriteStream(`${projectName}/${filesToCopy[i]}`));
     }
 
     // Install dependencies
-    console.log('Installing deps -- it might take a few minutes..');
+    console.log("Installing deps -- it might take a few minutes..");
     const devDeps = getDependencies(packageJson.devDependencies);
     const deps = getDependencies(packageJson.dependencies);
-    exec(`cd ${projectName} && npm i -D ${devDeps}`,
-        (npmErr, npmStdout, npmStderr) => {
+    const installDependencies = `cd ${projectName} && npm i --save-dev ${devDeps} && npm i --save ${deps}`;
+    exec(installDependencies,
+        (npmErr, npmStdout) => {
             if (npmErr) {
-              console.error(`it's always npm, ain't it? ${npmErr}`);
-              return;
+                console.error(`it's always npm, ain't it? ${npmErr}`);
+                return;
             }
             console.log(npmStdout);
-            console.log('Dependencies installed');
+            console.log("Dependencies installed");
 
-            console.log('Copying additional files..');
+            console.log("Copying additional files..");
             // copy additional source files
-            fs.copy(path.join(__dirname, '../src'), `${projectName}/src`)
+            fs.copy(path.join(__dirname, "../src"), `${projectName}/src`)
                 .then(() => {
                     console.log(`
                         All done!
