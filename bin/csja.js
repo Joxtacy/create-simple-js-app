@@ -55,11 +55,27 @@ exec(createDirAndInitNpm, (initErr, initStdout) => {
     });
 
     // Copy config files
-    const filesToCopy = ["README.md", "webpack.config.js", ".eslintrc.js", ".eslintignore", ".babelrc"];
+    const filesToCopy = [
+        "README.md",
+        "webpack.config.js",
+        ".eslintrc.js",
+        ".eslintignore",
+        ".babelrc",
+        "jest.config.js"
+    ];
     for (let i = 0; i < filesToCopy.length; i += 1) {
         fs.createReadStream(path.join(__dirname, `../${filesToCopy[i]}`))
             .pipe(fs.createWriteStream(`${projectName}/${filesToCopy[i]}`));
     }
+
+    // Copy __mocks__
+    fs.copy(path.join(__dirname, "../__mocks__"), `${projectName}/__mocks__`)
+        .then(() => {
+            console.log("__mocks__ copied");
+        })
+        .catch((err) => {
+            console.error(err);
+        });
 
     // Install dependencies
     console.log("Installing deps -- it might take a few minutes..");
