@@ -47,10 +47,8 @@ exec(createDirAndInitNpm, (initErr, initStdout) => {
     fs.readFile(packageJsonFile, (err, file) => {
         if (err) throw err;
 
-        console.log(file.toString());
         const data = file.toString()
             .replace("\"test\": \"echo \\\"Error: no test specified\\\" && exit 1\"", scripts);
-        console.log(data);
         fs.writeFile(packageJsonFile, data, err2 => err2 || true);
     });
 
@@ -95,11 +93,9 @@ exec(createDirAndInitNpm, (initErr, initStdout) => {
             // copy additional source files
             fs.copy(path.join(__dirname, "../src"), `${projectName}/src`)
                 .then(() => {
-                    console.log(`
-                        All done!
-                        Your project is now started into ${projectName} folder.
-                        Happy Coding!
-                    `);
+                    console.log(`All done!
+Your project is now started into ${projectName} folder.
+Happy Coding!`);
                 })
                 .catch((err) => {
                     console.error(err);
