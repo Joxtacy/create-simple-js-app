@@ -3,6 +3,7 @@
 const path = require("path");
 const fs = require("fs-extra");
 const execa = require("execa");
+const ora = require("ora");
 
 const packageJson = require("../package.json");
 
@@ -20,6 +21,7 @@ const getDependencies = deps =>
         .replace(/,/g, " ")
         .replace(/^/g, "")
         // exclude the plugin only used in this file, nor relevant to the boilerplate
+        .replace(/ora[^\s]+/g, "")
         .replace(/fs-extra[^\s]+/g, "")
         .replace(/execa[^\s]+/g, "");
 
@@ -31,34 +33,39 @@ const scripts = `"build": "MODE=production webpack",
 
 const projectName = process.argv[2];
 
-console.log("Initializing project...");
-
+let oraSpinner = ora();
 async function createSimpleJsApp() {
     // Create project folder
     try {
+        oraSpinner.start("Creating project folder");
         await execa("mkdir", [projectName]);
+        oraSpinner.succeed();
     } catch (error) {
-        console.error(error);
+        oraSpinner.fail();
         throw error;
     }
 
     //Initialize npm
     try {
+        oraSpinner.start("Initializing npm");
         await execa("npm", ["init", "--yes"], { cwd: projectName });
+        oraSpinner.succeed();
     } catch (error) {
-        console.error(error);
+        oraSpinner.fail();
         throw error;
     }
 
     // Add scripts to package.json
     const packageJsonFile = `${projectName}/package.json`;
     try {
+        oraSpinner.start("Adding scripts");
         const file = await fs.readFile(packageJsonFile);
         const data = file.toString()
             .replace("\"test\": \"echo \\\"Error: no test specified\\\" && exit 1\"", scripts);
         await fs.writeFile(packageJsonFile, data);
+        oraSpinner.succeed();
     } catch (error) {
-        console.error(error);
+        oraSpinner.fail();
         throw error;
     }
 
@@ -72,38 +79,47 @@ async function createSimpleJsApp() {
         "jest.config.js"
     ];
     try {
+        oraSpinner.start("Copying configuration files");
         for (let i = 0; i < filesToCopy.length; i += 1) {
             await fs.copy(path.join(__dirname, `../${filesToCopy[i]}`), `${projectName}/${filesToCopy[i]}`);
         }
+        oraSpinner.succeed();
     } catch (error) {
-        console.error(error);
+        oraSpinner.fail();
         throw error;
     }
 
     // Copy __mocks__
     try {
+        oraSpinner.start("Copying __mocks__");
         await fs.copy(path.join(__dirname, "../__mocks__"), `${projectName}/__mocks__`);
+        oraSpinner.succeed();
     } catch (error) {
-        console.error(error);
+        oraSpinner.fail();
         throw error;
     }
 
     // Install dependencies
     try {
-        console.log(packageJson.devDependencies);
         const devDeps = getDependencies(packageJson.devDependencies);
         const deps = getDependencies(packageJson.dependencies);
+        oraSpinner.start("Installing devDependencies");
         await execa.command(`npm i --save-dev ${devDeps}`, { cwd: projectName });
+        oraSpinner.succeed();
+        oraSpinner.start("Installing dependencies");
         await execa.command(`npm i --save-dev ${deps}`, { cwd: projectName });
+        oraSpinner.succeed();
     } catch (error) {
-        console.error(error);
+        oraSpinner.fail();
         throw error;
     }
 
     try {
+        oraSpinner.start("Copying src");
         await fs.copy(path.join(__dirname, "../src"), `${projectName}/src`);
+        oraSpinner.succeed();
     } catch (error) {
-        console.error(error);
+        oraSpinner.fail();
         throw error;
     }
 }
