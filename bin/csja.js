@@ -2,7 +2,7 @@
 
 const path = require("path");
 const fs = require("fs-extra");
-const { exec } = require("child_process");
+const execa = require("execa");
 
 const packageJson = require("../package.json");
 
@@ -20,7 +20,8 @@ const getDependencies = deps =>
         .replace(/,/g, " ")
         .replace(/^/g, "")
         // exclude the plugin only used in this file, nor relevant to the boilerplate
-        .replace(/fs-extra[^\s]+/g, "");
+        .replace(/fs-extra[^\s]+/g, "")
+        .replace(/execa[^\s]+/g, "");
 
 const scripts = `"build": "MODE=production webpack",
     "start": "MODE=development webpack-dev-server",
@@ -29,28 +30,37 @@ const scripts = `"build": "MODE=production webpack",
     "test": "jest --watchAll"`;
 
 const projectName = process.argv[2];
-const createDirAndInitNpm = `mkdir ${projectName} && cd ${projectName} && npm init --yes`;
 
 console.log("Initializing project...");
 
-// create folder and initialize npm
-exec(createDirAndInitNpm, (initErr, initStdout) => {
-    if (initErr) {
-        console.error(`Everything was fine, then it wasn't: ${initErr}`);
-        return;
+async function createSimpleJsApp() {
+    // Create project folder
+    try {
+        await execa("mkdir", [projectName]);
+    } catch (error) {
+        console.error(error);
+        throw error;
     }
 
-    console.log(initStdout);
+    //Initialize npm
+    try {
+        await execa("npm", ["init", "--yes"], { cwd: projectName });
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
 
     // Add scripts to package.json
     const packageJsonFile = `${projectName}/package.json`;
-    fs.readFile(packageJsonFile, (err, file) => {
-        if (err) throw err;
-
+    try {
+        const file = await fs.readFile(packageJsonFile);
         const data = file.toString()
             .replace("\"test\": \"echo \\\"Error: no test specified\\\" && exit 1\"", scripts);
-        fs.writeFile(packageJsonFile, data, err2 => err2 || true);
-    });
+        await fs.writeFile(packageJsonFile, data);
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
 
     // Copy config files
     const filesToCopy = [
@@ -61,46 +71,42 @@ exec(createDirAndInitNpm, (initErr, initStdout) => {
         ".babelrc",
         "jest.config.js"
     ];
-    for (let i = 0; i < filesToCopy.length; i += 1) {
-        fs.createReadStream(path.join(__dirname, `../${filesToCopy[i]}`))
-            .pipe(fs.createWriteStream(`${projectName}/${filesToCopy[i]}`));
+    try {
+        for (let i = 0; i < filesToCopy.length; i += 1) {
+            await fs.copy(path.join(__dirname, `../${filesToCopy[i]}`), `${projectName}/${filesToCopy[i]}`);
+        }
+    } catch (error) {
+        console.error(error);
+        throw error;
     }
 
     // Copy __mocks__
-    fs.copy(path.join(__dirname, "../__mocks__"), `${projectName}/__mocks__`)
-        .then(() => {
-            console.log("__mocks__ copied");
-        })
-        .catch((err) => {
-            console.error(err);
-        });
+    try {
+        await fs.copy(path.join(__dirname, "../__mocks__"), `${projectName}/__mocks__`);
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
 
     // Install dependencies
-    console.log("Installing deps -- it might take a few minutes..");
-    const devDeps = getDependencies(packageJson.devDependencies);
-    const deps = getDependencies(packageJson.dependencies);
-    const installDependencies = `cd ${projectName} && npm i --save-dev ${devDeps} && npm i --save ${deps}`;
-    exec(installDependencies,
-        (npmErr, npmStdout) => {
-            if (npmErr) {
-                console.error(`it's always npm, ain't it? ${npmErr}`);
-                return;
-            }
-            console.log(npmStdout);
-            console.log("Dependencies installed");
+    try {
+        console.log(packageJson.devDependencies);
+        const devDeps = getDependencies(packageJson.devDependencies);
+        const deps = getDependencies(packageJson.dependencies);
+        await execa.command(`npm i --save-dev ${devDeps}`, { cwd: projectName });
+        await execa.command(`npm i --save-dev ${deps}`, { cwd: projectName });
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
 
-            console.log("Copying additional files..");
-            // copy additional source files
-            fs.copy(path.join(__dirname, "../src"), `${projectName}/src`)
-                .then(() => {
-                    console.log(`All done!
-Your project is now started into ${projectName} folder.
-Happy Coding!`);
-                })
-                .catch((err) => {
-                    console.error(err);
-                });
-        }
-    );
-});
+    try {
+        await fs.copy(path.join(__dirname, "../src"), `${projectName}/src`);
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+}
+
+module.exports = createSimpleJsApp();
 
