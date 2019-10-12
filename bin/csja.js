@@ -4,6 +4,7 @@ const path = require("path");
 const fs = require("fs-extra");
 const execa = require("execa");
 const ora = require("ora");
+const oraSpinner = ora();
 
 const packageJson = require("../package.json");
 
@@ -33,8 +34,25 @@ const scripts = `"build": "MODE=production webpack",
 
 const projectName = process.argv[2];
 
-let oraSpinner = ora();
 async function createSimpleJsApp() {
+    try {
+        await installEverything();
+    } catch (error) {
+        await rollbackInstallation();
+    }
+}
+
+async function rollbackInstallation() {
+    try {
+        oraSpinner.start("Rolling back changes...");
+        await execa("rm", ["-rf", projectName]);
+        oraSpinner.succeed("Changes are rolled back");
+    } catch {
+        oraSpinner.fail("Could not revert changes. Sorry... :(");
+    }
+}
+
+async function installEverything() {
     // Create project folder
     try {
         oraSpinner.start("Creating project folder");
