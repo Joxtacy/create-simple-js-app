@@ -21,6 +21,14 @@
   "bugs": {
     "url": "https://github.com/Joxtacy/create-simple-js-app/issues"
   },
+  "keywords": [
+      "babel",
+      "eslint",
+      "jest",
+      "scaffold",
+      "scaffolding",
+      "webpack"
+  ],
   "homepage": "https://github.com/Joxtacy/create-simple-js-app#readme",
   "devDependencies": {
     "@babel/core": "^7.6.2",
