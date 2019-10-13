@@ -47,7 +47,7 @@ async function rollbackInstallation() {
         oraSpinner.start("Rolling back changes...");
         await execa("rm", ["-rf", projectName]);
         oraSpinner.succeed("Changes are rolled back");
-    } catch {
+    } catch (error) {
         oraSpinner.fail("Could not revert changes. Sorry... :(");
     }
 }
