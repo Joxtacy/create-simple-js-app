@@ -1,5 +1,6 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const CompressionPlugin = require("compression-webpack-plugin");
 
 module.exports = () => {
     const isProduction = process.env.MODE === "production";
@@ -31,7 +32,8 @@ module.exports = () => {
         plugins: [
             new HtmlWebpackPlugin({
                 template: path.join(__dirname, "src/index.html")
-            })
+            }),
+            isProduction ? new CompressionPlugin() : () => {}
         ]
     };
 };
