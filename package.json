@@ -45,6 +45,7 @@
   "dependencies": {
     "execa": "^2.1.0",
     "fs-extra": "^8.1.0",
+    "inquirer": "^7.0.0",
     "ora": "^4.0.2"
   }
 }
