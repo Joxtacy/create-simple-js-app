@@ -111,7 +111,7 @@ async function createSimpleJsApp() {
     }
 
     console.info("Done! :)");
-    return;
+    process.exit();
 }
 
 async function rollbackInstallation(projectName) {
