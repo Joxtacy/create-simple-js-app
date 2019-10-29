@@ -132,7 +132,12 @@ async function installEverything(options) {
         oraSpinner.succeed();
     } catch (error) {
         oraSpinner.fail();
-        throw error;
+        if (error.stderr.includes("File exists")) {
+            console.error("[ERROR]: Directory already exists");
+        } else {
+            console.error("[ERROR]: Could not create project directory.", error);
+        }
+        return;
     }
 
     //Initialize npm
