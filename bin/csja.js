@@ -16,24 +16,53 @@ const packageJson = require("../package.json");
  * that we can attach to an `npm i {value}` to install
  * every dep the exact version speficied in package.json
  */
-const getDependencies = deps =>
-    Object.entries(deps)
+const getDependencies = bundler => deps => {
+    let bundlerExclusions;
+    switch (bundler) {
+        case "Webpack": {
+            bundlerExclusions = "rollup";
+            break;
+        }
+        case "Rollup": {
+            bundlerExclusions = "webpack";
+            break;
+        }
+    }
+
+    const notNeededPackages = ["ora", "fs-extra", "inquirer", "execa"];
+
+    return Object.entries(deps)
+        .filter(dep => !dep[0].includes(bundlerExclusions))
+        .filter(dep => !notNeededPackages.includes(dep[0]))
         .map(dep => `${dep[0]}@${dep[1]}`)
         .toString()
         .replace(/,/g, " ")
-        .replace(/^/g, "")
-        // exclude the plugin only used in this file, nor relevant to the boilerplate
-        .replace(/ora[^\s]+/g, "")
-        .replace(/fs-extra[^\s]+/g, "")
-        .replace(/inquirer[^\s]+/g, "")
-        .replace(/execa[^\s]+/g, "");
+        .replace(/^/g, "");
+};
 
-const scripts = `"build": "MODE=production webpack",
-    "start": "MODE=development webpack-dev-server",
-    "lint": "eslint --ext .js ./ --ignore-path .eslintignore",
-    "lint:fix": "eslint --ext .js --fix ./",
-    "test": "jest --watchAll"`;
+const scripts = (bundler) => {
+    let build;
+    let start;
 
+    switch (bundler) {
+        case "Webpack": {
+            build = "\"build\": \"MODE=production webpack\"";
+            start = "\"start\": \"MODE=development webpack-dev-server\"";
+            break;
+        }
+        case "Rollup": {
+            build = "\"build\": \"MODE=production rollup -c\"";
+            start = "\"start\": \"rollup -c -w\"";
+            break;
+        }
+    }
+
+    const lint = "\"lint\": \"eslint --ext .js ./ --ignore-path .eslintignore\"";
+    const lintFix = "\"lint:fix\": \"eslint --ext .js --fix ./\"";
+    const test = "\"test\": \"jest --watchAll\"";
+
+    return [build, start, lint, lintFix, test].join(",\n    ");
+};
 
 async function validator(input) {
     const regexp = /[A-Z0-9-_]/gi;
@@ -50,6 +79,15 @@ const questions = [
         name: "projectName",
         message: "Write your project name. Can only contain [a-zA-Z0-9-_].",
         validate: validator
+    },
+    {
+        type: "list",
+        name: "bundler",
+        message: "Which bundler do you want to use?",
+        choices: [
+            "Webpack",
+            "Rollup"
+        ]
     }
 ];
 
@@ -58,12 +96,14 @@ async function createSimpleJsApp() {
     try {
         options = await inquirer.prompt(questions);
     } catch (error) {
+        console.error(error);
+        throw error;
     }
 
     try {
-        await installEverything(options);
+        return await installEverything(options);
     } catch (error) {
-        await rollbackInstallation(options.projectName);
+        return await rollbackInstallation(options.projectName);
     }
 }
 
@@ -104,7 +144,7 @@ async function installEverything(options) {
         oraSpinner.start("Adding scripts");
         const file = await fs.readFile(packageJsonFile);
         const data = file.toString()
-            .replace("\"test\": \"echo \\\"Error: no test specified\\\" && exit 1\"", scripts);
+            .replace("\"test\": \"echo \\\"Error: no test specified\\\" && exit 1\"", scripts(options.bundler));
         await fs.writeFile(packageJsonFile, data);
         oraSpinner.succeed();
     } catch (error) {
@@ -115,12 +155,23 @@ async function installEverything(options) {
     // Copy config files
     const filesToCopy = [
         "README.md",
-        "webpack.config.js",
         ".eslintrc.js",
         ".eslintignore",
         ".babelrc",
         "jest.config.js"
     ];
+
+    switch (options.bundler) {
+        case "Webpack": {
+            filesToCopy.push("webpack.config.js");
+            break;
+        }
+        case "Rollup": {
+            filesToCopy.push("rollup.config.js");
+            break;
+        }
+    }
+
     try {
         oraSpinner.start("Copying configuration files");
         for (let i = 0; i < filesToCopy.length; i += 1) {
@@ -144,8 +195,8 @@ async function installEverything(options) {
 
     // Install dependencies
     try {
-        const devDeps = getDependencies(packageJson.devDependencies);
-        const deps = getDependencies(packageJson.dependencies);
+        const devDeps = getDependencies(options.bundler)(packageJson.devDependencies);
+        const deps = getDependencies(options.bundler)(packageJson.dependencies);
         oraSpinner.start("Installing devDependencies");
         await execa.command(`npm i --save-dev ${devDeps}`, { cwd: options.projectName });
         oraSpinner.succeed();
