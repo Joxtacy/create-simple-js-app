@@ -3,7 +3,7 @@
 const path = require("path");
 const fs = require("fs-extra");
 const execa = require("execa");
-const inquirer = require("inquirer");
+const { Input, Select } = require("enquirer");
 const ora = require("ora");
 const oraSpinner = ora();
 
@@ -29,7 +29,7 @@ const getDependencies = bundler => deps => {
         }
     }
 
-    const notNeededPackages = ["ora", "fs-extra", "inquirer", "execa"];
+    const notNeededPackages = ["ora", "fs-extra", "enquirer", "execa"];
 
     return Object.entries(deps)
         .filter(dep => !dep[0].includes(bundlerExclusions))
@@ -64,47 +64,54 @@ const scripts = (bundler) => {
     return [build, start, lint, lintFix, test].join(",\n    ");
 };
 
-async function validator(input) {
-    const regexp = /[A-Z0-9-_]/gi;
-    const found = input.match(regexp);
-    if (found && input && found.length === input.length) {
-        return true;
-    } else {
-        return "Invalid project name!";
+async function createSimpleJsApp() {
+    function validator(input) {
+        const regexp = /[A-Z0-9-_]/gi;
+        const found = input.match(regexp);
+        if (found && input && found.length === input.length) {
+            return true;
+        } else {
+            return "Invalid project name!";
+        }
     }
-}
-const questions = [
-    {
-        type: "input",
+
+    const inputPrompt = new Input({
         name: "projectName",
         message: "Write your project name. Can only contain [a-zA-Z0-9-_].",
+        initial: "my-js-project",
         validate: validator
-    },
-    {
-        type: "list",
+    });
+
+    const selectPrompt = new Select({
         name: "bundler",
         message: "Which bundler do you want to use?",
         choices: [
             "Webpack",
             "Rollup"
         ]
-    }
-];
+    });
 
-async function createSimpleJsApp() {
-    let options;
+    let options = {};
     try {
-        options = await inquirer.prompt(questions);
+        const projectName = await inputPrompt.run();
+        const bundler = await selectPrompt.run();
+        options = {
+            projectName,
+            bundler
+        };
     } catch (error) {
         console.error(error);
-        throw error;
+        return;
     }
 
     try {
-        return await installEverything(options);
+        await installEverything(options);
     } catch (error) {
-        return await rollbackInstallation(options.projectName);
+        await rollbackInstallation(options.projectName);
     }
+
+    console.info("Done! :)");
+    return;
 }
 
 async function rollbackInstallation(projectName) {
