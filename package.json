@@ -1,6 +1,6 @@
 {
   "name": "create-simple-js-app",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Creates a simple js app template",
   "main": "src/index.js",
   "scripts": {
