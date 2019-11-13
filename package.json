@@ -27,7 +27,8 @@
     "jest",
     "scaffold",
     "scaffolding",
-    "webpack"
+    "webpack",
+    "rollup"
   ],
   "homepage": "https://github.com/Joxtacy/create-simple-js-app#readme",
   "devDependencies": {
