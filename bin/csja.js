@@ -183,8 +183,11 @@ async function installEverything(options) {
     try {
         oraSpinner.start("Adding scripts");
         const file = await fs.readFile(packageJsonFile);
-        const data = file.toString()
+        let data = file.toString()
             .replace("\"test\": \"echo \\\"Error: no test specified\\\" && exit 1\"", scripts(options.bundler));
+        if (options.framework === "Svelte") {
+            data = data.replace('"main": "index.js",', '"browserslist": [\n    "last 1 chrome versions"\n  ],\n  "main": "index.js",');
+        }
         await fs.writeFile(packageJsonFile, data);
         oraSpinner.succeed();
     } catch (error) {
