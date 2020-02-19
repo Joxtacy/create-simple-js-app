@@ -16,7 +16,7 @@ const packageJson = require("../package.json");
  * that we can attach to an `npm i {value}` to install
  * every dep the exact version speficied in package.json
  */
-const getDependencies = bundler => deps => {
+const getDependencies = (bundler, framework) => deps => {
     let bundlerExclusions;
     switch (bundler) {
         case "Webpack": {
@@ -29,10 +29,23 @@ const getDependencies = bundler => deps => {
         }
     }
 
+    let frameworkExclusions;
+    switch (framework) {
+        case "Svelte": {
+            break;
+        }
+        case "none": {
+            frameworkExclusions = "svelte";
+            break;
+        }
+        default:
+    }
+
     const notNeededPackages = ["ora", "fs-extra", "enquirer", "execa"];
 
     return Object.entries(deps)
         .filter(dep => !dep[0].includes(bundlerExclusions))
+        .filter(dep => !dep[0].includes(frameworkExclusions))
         .filter(dep => !notNeededPackages.includes(dep[0]))
         .map(dep => `${dep[0]}@${dep[1]}`)
         .toString()
@@ -91,16 +104,31 @@ async function createSimpleJsApp() {
         ]
     });
 
+    const frameworkPrompt = new Select({
+        name: "framework",
+        message: "Which framework do you want, if any?",
+        choices: [
+            "Svelte",
+            "none"
+        ]
+    });
+
     let options = {};
     try {
         const projectName = await inputPrompt.run();
         const bundler = await selectPrompt.run();
+        const framework = await frameworkPrompt.run();
         options = {
             projectName,
-            bundler
+            bundler,
+            framework
         };
+
+        if (options.bundler === "Webpack" && options.framework === "Svelte") {
+            throw "Webpack + Svelte is currently not supported";
+        }
     } catch (error) {
-        console.error(error);
+        console.error(`[ERROR] ${error}`);
         return;
     }
 
@@ -173,15 +201,31 @@ async function installEverything(options) {
         "jest.config.js"
     ];
 
+    const frameworkConfig = {
+        src: "rollup.config.js",
+        dest: "rollup.config.js",
+        codeSrc: "src"
+    };
     switch (options.bundler) {
         case "Webpack": {
-            filesToCopy.push("webpack.config.js");
+            frameworkConfig.src = "webpack.config.js";
+            frameworkConfig.dest = "webpack.config.js";
             break;
         }
         case "Rollup": {
-            filesToCopy.push("rollup.config.js");
+            frameworkConfig.dest = "rollup.config.js";
+            frameworkConfig.src = "rollup.config.js";
             break;
         }
+    }
+
+    switch (options.framework) {
+        case "Svelte": {
+            frameworkConfig.src = "rollup-svelte.config.js";
+            frameworkConfig.codeSrc = "svelte-src";
+            break;
+        }
+        default:
     }
 
     try {
@@ -189,6 +233,7 @@ async function installEverything(options) {
         for (let i = 0; i < filesToCopy.length; i += 1) {
             await fs.copy(path.join(__dirname, `../${filesToCopy[i]}`), `${options.projectName}/${filesToCopy[i]}`);
         }
+        await fs.copy(path.join(__dirname, `../${frameworkConfig.src}`), `${options.projectName}/${frameworkConfig.dest}`);
         oraSpinner.succeed();
     } catch (error) {
         oraSpinner.fail();
@@ -223,7 +268,7 @@ async function installEverything(options) {
 
     try {
         oraSpinner.start("Copying src");
-        await fs.copy(path.join(__dirname, "../src"), `${options.projectName}/src`);
+        await fs.copy(path.join(__dirname, `../${frameworkConfig.codeSrc}`), `${options.projectName}/src`);
         oraSpinner.succeed();
     } catch (error) {
         oraSpinner.fail();
