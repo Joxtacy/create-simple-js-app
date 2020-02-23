@@ -14,7 +14,7 @@ export default {
     input: "src/index.js",
     output: {
         sourcemap: !isProduction,
-        file: isProduction ? "dist/bundle-[contenthash].js" : "dist/bundle.js",
+        file: isProduction ? "dist/bundle-[hash].js" : "dist/bundle.js",
         name: "app",
         format: "iife"
     },
@@ -25,7 +25,7 @@ export default {
 			// we'll extract any component CSS out into
 			// a separate file — better for performance
 			css: css => {
-				css.write(isProduction ? "dist/bundle-[contenthash].css" : "dist/bundle.css");
+				css.write(isProduction ? "dist/bundle-[hash].css" : "dist/bundle.css", !isProduction);
 			}
 		}),
 
