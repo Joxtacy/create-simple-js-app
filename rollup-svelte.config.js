@@ -25,7 +25,7 @@ export default {
 			// we'll extract any component CSS out into
 			// a separate file — better for performance
 			css: css => {
-				css.write(isProduction ? "dist/bundle-[contenthash].js" : "dist/bundle.js");
+				css.write(isProduction ? "dist/bundle-[contenthash].css" : "dist/bundle.css");
 			}
 		}),
 
